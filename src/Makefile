@@ -122,6 +122,8 @@ SRCDIRS		+= drivers/net/ath/ath9k
 NON_AUTO_SRCS	:=
 NON_AUTO_SRCS	+= core/version.c
 NON_AUTO_SRCS	+= drivers/net/prism2.c
+NON_AUTO_SRCS	+= net/tls_mbedtls.c
+NON_AUTO_SRCS	+= tests/tls_mbedtls_test.c
 
 # INCDIRS lists the include path
 #
@@ -261,4 +263,5 @@ DRIVERS_rpi	+= smsc95xx lan78xx
 #
 
 MAKEDEPS	+= Makefile.housekeeping
+-include Makefile.mbedtls
 include Makefile.housekeeping

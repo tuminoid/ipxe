@@ -92,3 +92,6 @@ REQUIRE_OBJECT ( efi_siglist_test );
 REQUIRE_OBJECT ( cpio_test );
 REQUIRE_OBJECT ( fdt_test );
 REQUIRE_OBJECT ( ecdsa_test );
+#ifdef MBEDTLS_CONFIG_FILE
+REQUIRE_OBJECT ( tls_mbedtls_test );
+#endif

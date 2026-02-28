@@ -1,0 +1,8 @@
+#!ipxe
+dhcp
+imgfetch https://google.com/robots.txt || goto fail
+echo PASS
+exit 0
+:fail
+echo FAIL
+exit 1

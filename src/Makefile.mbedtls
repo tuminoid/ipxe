@@ -1,0 +1,107 @@
+# mbedTLS build integration for iPXE
+# Included from src/Makefile; no-op when CONFIG != mbedtls.
+
+ifdef CONFIG
+ifeq ($(CONFIG),mbedtls)
+
+MBEDTLS := third_party/mbedtls
+
+# Include paths
+INCDIRS += $(MBEDTLS)/include $(MBEDTLS)
+
+# Config file
+CFLAGS += -DMBEDTLS_CONFIG_FILE='"mbedtls_config_ipxe.h"'
+
+# Exclude iPXE's native tls.c (compiles to nothing, no warnings)
+NON_AUTO_SRCS += net/tls.c
+
+# iPXE's native TLS cipher-suite registrations reference symbols from
+# tls.c (tls_*_exchange_algorithm).  mbedTLS handles cipher-suite
+# negotiation internally, so these files are not needed.
+NON_AUTO_SRCS += $(wildcard crypto/mishmash/ecdhe_*.c) \
+		 $(wildcard crypto/mishmash/dhe_*.c) \
+		 $(wildcard crypto/mishmash/rsa_aes_*.c)
+
+# Re-enable tls_mbedtls.c and test (excluded from default build in main Makefile)
+NON_AUTO_SRCS := $(filter-out net/tls_mbedtls.c tests/tls_mbedtls_test.c,$(NON_AUTO_SRCS))
+
+# --- Wrapper files for basename collisions ---
+SRCDIRS += $(MBEDTLS)/ipxe
+
+# --- Non-colliding mbedTLS sources (curated) ---
+
+# TLS protocol
+SRCS += $(MBEDTLS)/library/ssl_tls.c
+SRCS += $(MBEDTLS)/library/ssl_msg.c
+SRCS += $(MBEDTLS)/library/ssl_client.c
+SRCS += $(MBEDTLS)/library/ssl_ciphersuites.c
+SRCS += $(MBEDTLS)/library/ssl_tls12_client.c
+SRCS += $(MBEDTLS)/library/ssl_tls13_client.c
+SRCS += $(MBEDTLS)/library/ssl_tls13_generic.c
+SRCS += $(MBEDTLS)/library/ssl_tls13_keys.c
+SRCS += $(MBEDTLS)/library/ssl_debug_helpers_generated.c
+SRCS += $(MBEDTLS)/library/mps_reader.c
+SRCS += $(MBEDTLS)/library/mps_trace.c
+
+# X.509 (x509.c via wrapper in ipxe/)
+SRCS += $(MBEDTLS)/library/x509_crt.c
+SRCS += $(MBEDTLS)/library/x509_crl.c
+
+# Crypto (colliding files via wrappers in ipxe/)
+SRCS += $(MBEDTLS)/library/asn1parse.c
+SRCS += $(MBEDTLS)/library/asn1write.c
+SRCS += $(MBEDTLS)/library/bignum.c
+SRCS += $(MBEDTLS)/library/bignum_core.c
+SRCS += $(MBEDTLS)/library/bignum_mod.c
+SRCS += $(MBEDTLS)/library/bignum_mod_raw.c
+SRCS += $(MBEDTLS)/library/block_cipher.c
+SRCS += $(MBEDTLS)/library/cipher.c
+SRCS += $(MBEDTLS)/library/cipher_wrap.c
+SRCS += $(MBEDTLS)/library/constant_time.c
+SRCS += $(MBEDTLS)/library/ctr_drbg.c
+SRCS += $(MBEDTLS)/library/ecdh.c
+SRCS += $(MBEDTLS)/library/ecp.c
+SRCS += $(MBEDTLS)/library/ecp_curves.c
+SRCS += $(MBEDTLS)/library/ecp_curves_new.c
+SRCS += $(MBEDTLS)/library/hkdf.c
+SRCS += $(MBEDTLS)/library/md.c
+SRCS += $(MBEDTLS)/library/oid.c
+SRCS += $(MBEDTLS)/library/pk.c
+SRCS += $(MBEDTLS)/library/pk_ecc.c
+SRCS += $(MBEDTLS)/library/pk_wrap.c
+SRCS += $(MBEDTLS)/library/pkparse.c
+SRCS += $(MBEDTLS)/library/rsa_alt_helpers.c
+
+# PSA crypto (required for TLS 1.3)
+SRCS += $(MBEDTLS)/library/psa_crypto.c
+SRCS += $(MBEDTLS)/library/psa_crypto_aead.c
+SRCS += $(MBEDTLS)/library/psa_crypto_cipher.c
+SRCS += $(MBEDTLS)/library/psa_crypto_client.c
+SRCS += $(MBEDTLS)/library/psa_crypto_driver_wrappers_no_static.c
+SRCS += $(MBEDTLS)/library/psa_crypto_ecp.c
+SRCS += $(MBEDTLS)/library/psa_crypto_hash.c
+SRCS += $(MBEDTLS)/library/psa_crypto_mac.c
+SRCS += $(MBEDTLS)/library/psa_crypto_rsa.c
+SRCS += $(MBEDTLS)/library/psa_crypto_slot_management.c
+SRCS += $(MBEDTLS)/library/psa_util.c
+
+# Platform + generated
+SRCS += $(MBEDTLS)/library/platform.c
+SRCS += $(MBEDTLS)/library/platform_util.c
+SRCS += $(MBEDTLS)/library/error.c
+
+# Per-object warning suppression for mbedTLS files.
+# Applied via CFLAGS_$(OBJECT) so iPXE's own -Werror is unaffected.
+MBEDTLS_OBJS := $(patsubst $(MBEDTLS)/library/%.c,%,\
+    $(filter $(MBEDTLS)/library/%,$(SRCS)))
+MBEDTLS_OBJS += $(patsubst $(MBEDTLS)/ipxe/%.c,%,\
+    $(wildcard $(MBEDTLS)/ipxe/*.c))
+$(foreach obj,$(MBEDTLS_OBJS),\
+    $(eval CFLAGS_$(obj) += -Wno-unused-parameter \
+        -include third_party/mbedtls/ipxe/fixup_assert.h))
+
+# Test file needs mbedTLS headers and fixup
+CFLAGS_tls_mbedtls_test += -include third_party/mbedtls/ipxe/fixup_assert.h
+
+endif # mbedtls
+endif # CONFIG

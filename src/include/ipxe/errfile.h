@@ -447,6 +447,7 @@ FILE_SECBOOT ( PERMITTED );
 #define ERRFILE_efi_cacert	      ( ERRFILE_OTHER | 0x00670000 )
 #define ERRFILE_ecdhe		      ( ERRFILE_OTHER | 0x00680000 )
 #define ERRFILE_ecdsa		      ( ERRFILE_OTHER | 0x00690000 )
+#define ERRFILE_tls_mbedtls	      ( ERRFILE_OTHER | 0x006a0000 )
 
 /** @} */
 
